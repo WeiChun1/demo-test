@@ -5,6 +5,8 @@ const POSTER_URL = BASE_URL + '/posters/'
 const movies = []
 
 const dataPanel = document.querySelector('#data-panel')
+const searchForm = document.querySelector('#search-form')
+const searchInput = document.querySelector('#search-input')
 
 function renderMovieList(data) {
 
@@ -34,12 +36,29 @@ function renderMovieList(data) {
   dataPanel.innerHTML = rawHTML
 }
 
-dataPanel.addEventListener('click', function onPanelClicked(event){
-  if (event.target.matches('.btn-show-movie')){
+searchForm.addEventListener('submit', function onSearchFormSubmitted(event) {
+  event.preventDefault()
+
+  const keyword = searchInput.value.trim().toLowerCase()
+  let filteredMovies = []
+
+
+  filteredMovies = movies.filter(
+    movie => movie.title.toLowerCase().includes(keyword)
+  )
+  if (filteredMovies.length === 0) {
+    return alert(`您輸入的關鍵字：${keyword} 沒有符合條件的電影`)
+  }
+  
+  renderMovieList(filteredMovies)
+})
+
+dataPanel.addEventListener('click', function onPanelClicked(event) {
+  if (event.target.matches('.btn-show-movie')) {
     showMovieModal(event.target.dataset.id)
   }
-  })
-  
+})
+
 function showMovieModal(id) {
   const modalTitle = document.querySelector('#movie-modal-title')
   const modalImage = document.querySelector('#movie-modal-image')
