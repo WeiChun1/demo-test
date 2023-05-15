@@ -1,13 +1,13 @@
 const BASE_URL = 'https://webdev.alphacamp.io'
 const INDEX_URL = BASE_URL + '/api/movies/'
 const POSTER_URL = BASE_URL + '/posters/'
-
+const MOVIES_PER_PAGE = 12
 const movies = []
 
 const dataPanel = document.querySelector('#data-panel')
 const searchForm = document.querySelector('#search-form')
 const searchInput = document.querySelector('#search-input')
-
+const paginator = document.querySelector('#paginator')
 function renderMovieList(data) {
 
   let rawHTML = ''
@@ -25,7 +25,7 @@ function renderMovieList(data) {
             <div class="card-footer">
               <button class="btn btn-primary btn-show-movie" data-bs-toggle="modal"
                 data-bs-target="#movie-modal" data-id="${item.id}">More</button>
-              <button class="btn btn-info btn-add-favorite">+</button>
+              <button class="btn btn-info btn-add-favorite" data-id="${item.id}">+</button>
               
             </div>
           </div>
@@ -55,7 +55,9 @@ searchForm.addEventListener('submit', function onSearchFormSubmitted(event) {
 
 dataPanel.addEventListener('click', function onPanelClicked(event) {
   if (event.target.matches('.btn-show-movie')) {
-    showMovieModal(event.target.dataset.id)
+    showMovieModal(Number(event.target.dataset.id))
+  } else if (event.target.matches('.btn-add-favorite')){
+    addToFavorite(Number(event.target.dataset.id))
   }
 })
 
@@ -74,11 +76,45 @@ function showMovieModal(id) {
   })
 }
 
+function addToFavorite(id){
+  const list = JSON.parse(localStorage.getItem('favoriteMovies')) || []
+  const movie = movies.find((movie) => movie.id === id)
+  if(list.some((movie) => movie.id === id)){
+    return alert('此電影已在收藏清單中！')
+  }
+  list.push(movie)
+  localStorage.setItem('favoriteMovies', JSON.stringify(list))
+}
+
+paginator.addEventListener('click', function onPaginatorClicked(event){
+  if(event.target.tagName !== 'A') return
+  
+  const page = Number(event.target.dataset.page)
+
+  renderMovieList(getMoviesByPage(page))
+})
+
+function getMoviesByPage(page) {
+  //計算起始 index 
+  const startIndex = (page - 1) * MOVIES_PER_PAGE
+  //回傳切割後的新陣列
+  return movies.slice(startIndex, startIndex + MOVIES_PER_PAGE)
+}
+function renderPaginator(amount) {
+  const numberofPages = Math.ceil(amount / MOVIES_PER_PAGE)
+
+  let rawHTML = ''
+
+  for(let page = 1; page <= numberofPages; page++){
+    rawHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${page}">${page}</a></li>`
+  }
+  paginator.innerHTML = rawHTML
+}
 axios
   .get(INDEX_URL) // 修改這裡
   .then((response) => {
     movies.push(...response.data.results)
-    console.log(movies)
-    renderMovieList(movies)
+    renderMovieList(getMoviesByPage(1))
+    renderPaginator(movies.length)
   })
   .catch((err) => console.log(err))
